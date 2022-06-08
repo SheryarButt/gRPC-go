@@ -6,6 +6,7 @@ import (
 
 	pb "github.com/SheryarButt/gRPC-go/greet/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 var addr string = "0.0.0.0:50051"
@@ -21,7 +22,20 @@ func main() {
 	}
 	log.Printf("Listening on %s", addr)
 
-	s := grpc.NewServer()
+	opts := []grpc.ServerOption{}
+	tls := true
+
+	if tls {
+		certfile := "ssl/server.crt"
+		keyfile := "ssl/server.pem"
+		cred, err := credentials.NewServerTLSFromFile(certfile, keyfile)
+		if err != nil {
+			log.Fatalf("failed to load credentials: %v", err)
+		}
+		opts = append(opts, grpc.Creds(cred))
+	}
+
+	s := grpc.NewServer(opts...)
 	pb.RegisterGreetServiceServer(s, &Server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
